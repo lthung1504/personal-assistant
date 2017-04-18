@@ -17,6 +17,7 @@ import java.util.concurrent.Callable;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
+import io.reactivex.Single;
 import io.reactivex.SingleObserver;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
@@ -30,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String LINE_SEPARATOR = "\n";
     private static final String TAG = MainActivity.class.getSimpleName();
 
-    TextView mTextView;
+    TextView textView;
 
     private final CompositeDisposable mCompositeDisposable = new CompositeDisposable();
 
@@ -50,12 +51,13 @@ public class MainActivity extends AppCompatActivity {
 
                 // test
 //                testDisposable();
-                testFlowable();
+//                testFlowable();
+                testSingleObserver();
             }
         });
 
         // bind item
-        mTextView = (TextView) findViewById(R.id.tvText);
+        textView = (TextView) findViewById(R.id.tvText);
 
     }
 
@@ -75,22 +77,22 @@ public class MainActivity extends AppCompatActivity {
                 .subscribeWith(new DisposableObserver<String>() {
                     @Override
                     public void onComplete() {
-                        mTextView.append(" onComplete");
-                        mTextView.append(LINE_SEPARATOR);
+                        textView.append(" onComplete");
+                        textView.append(LINE_SEPARATOR);
                         Log.d(TAG, " onComplete");
                     }
 
                     @Override
                     public void onNext(String value) {
-                        mTextView.append(" onNext : value : " + value);
-                        mTextView.append(LINE_SEPARATOR);
+                        textView.append(" onNext : value : " + value);
+                        textView.append(LINE_SEPARATOR);
                         Log.d(TAG, " onNext value : " + value);
                     }
 
                     @Override
                     public void onError(Throwable e) {
-                        mTextView.append(" onError : " + e.getMessage());
-                        mTextView.append(LINE_SEPARATOR);
+                        textView.append(" onError : " + e.getMessage());
+                        textView.append(LINE_SEPARATOR);
                         Log.d(TAG, " onError : " + e.getMessage());
 
                     }
@@ -108,6 +110,30 @@ public class MainActivity extends AppCompatActivity {
         }).subscribe(getSubscriber());
     }
 
+    void testSingleObserver() {
+        Single.just("Amit")
+                .subscribe(new SingleObserver<String>() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+                        Log.d(TAG, " onSubscribe : " + d.isDisposed());
+                    }
+
+                    @Override
+                    public void onSuccess(String string) {
+                        textView.append(" on Success : string = " + string);
+                        textView.append(LINE_SEPARATOR);
+                        Log.d(TAG, " onSuccess : string : " + string);
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        textView.append(" on Error : " + e.getMessage());
+                        textView.append(LINE_SEPARATOR);
+                        Log.d(TAG, " onError : " + e.getMessage());
+                    }
+                });
+    }
+
     @android.support.annotation.NonNull
     private SingleObserver<Integer> getSubscriber() {
         return new SingleObserver<Integer>() {
@@ -118,15 +144,15 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onSuccess(Integer integer) {
-                mTextView.append(" on Success : integer = " + integer);
-                mTextView.append(LINE_SEPARATOR);
+                textView.append(" on Success : integer = " + integer);
+                textView.append(LINE_SEPARATOR);
                 Log.d(TAG, " onSuccess : integer : " + integer);
             }
 
             @Override
             public void onError(Throwable e) {
-                mTextView.append(" on Error : " + e.getMessage());
-                mTextView.append(LINE_SEPARATOR);
+                textView.append(" on Error : " + e.getMessage());
+                textView.append(LINE_SEPARATOR);
                 Log.d(TAG, " onError : " + e.getMessage());
             }
         };
