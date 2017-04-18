@@ -14,10 +14,15 @@ import android.widget.TextView;
 
 import java.util.concurrent.Callable;
 
+import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
+import io.reactivex.SingleObserver;
 import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.BiFunction;
 import io.reactivex.observers.DisposableObserver;
 import io.reactivex.schedulers.Schedulers;
 
@@ -42,7 +47,10 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
-                testDisposable();
+
+                // test
+//                testDisposable();
+                testFlowable();
             }
         });
 
@@ -89,6 +97,41 @@ public class MainActivity extends AppCompatActivity {
                 })
         );
     }
+
+    void testFlowable() {
+        Flowable<Integer> flowable = Flowable.just(1, 2, 3, 4);
+        flowable.reduce(10, new BiFunction<Integer, Integer, Integer>() {
+            @Override
+            public Integer apply(@NonNull Integer integer, @NonNull Integer integer2) throws Exception {
+                return integer + integer2;
+            }
+        }).subscribe(getSubscriber());
+    }
+
+    @android.support.annotation.NonNull
+    private SingleObserver<Integer> getSubscriber() {
+        return new SingleObserver<Integer>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+                Log.d(TAG, " onSubscribe : " + d.isDisposed());
+            }
+
+            @Override
+            public void onSuccess(Integer integer) {
+                mTextView.append(" on Success : integer = " + integer);
+                mTextView.append(LINE_SEPARATOR);
+                Log.d(TAG, " onSuccess : integer : " + integer);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                mTextView.append(" on Error : " + e.getMessage());
+                mTextView.append(LINE_SEPARATOR);
+                Log.d(TAG, " onError : " + e.getMessage());
+            }
+        };
+    }
+
 
     static Observable<String> sampleObservable() {
         return Observable.defer(new Callable<ObservableSource<? extends String>>() {
