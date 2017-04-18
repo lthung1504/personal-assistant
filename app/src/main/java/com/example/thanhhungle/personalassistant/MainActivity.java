@@ -13,7 +13,10 @@ import android.view.View;
 import android.widget.TextView;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
+import io.reactivex.Completable;
+import io.reactivex.CompletableObserver;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.ObservableSource;
@@ -52,7 +55,8 @@ public class MainActivity extends AppCompatActivity {
                 // test
 //                testDisposable();
 //                testFlowable();
-                testSingleObserver();
+//                testSingleObserver();
+                testCompletableObserver();
             }
         });
 
@@ -66,6 +70,32 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onDestroy");
         super.onDestroy();
         mCompositeDisposable.clear();
+    }
+
+    void testCompletableObserver() {
+        Completable completable = Completable.timer(1000, TimeUnit.MILLISECONDS);
+        completable.subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new CompletableObserver() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+                        Log.d(TAG, " onSubscribe : " + d.isDisposed());
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        textView.append(" onComplete");
+                        textView.append(LINE_SEPARATOR);
+                        Log.d(TAG, " onComplete");
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        textView.append(" onError : " + e.getMessage());
+                        textView.append(LINE_SEPARATOR);
+                        Log.d(TAG, " onError : " + e.getMessage());
+                    }
+                });
     }
 
     void testDisposable() {
