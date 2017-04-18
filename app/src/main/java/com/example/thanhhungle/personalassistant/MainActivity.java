@@ -66,13 +66,45 @@ public class MainActivity extends AppCompatActivity {
 //                testFlowable();
 //                testSingleObserver();
 //                testCompletableObserver();
-                testMapOperator();
+//                testMapOperator();
+                testZipOperator();
             }
         });
 
         // bind item
         textView = (TextView) findViewById(R.id.tvText);
 
+    }
+
+    void testZipOperator() {
+        Observable.zip(
+                Observable.create(new ObservableOnSubscribe<List<User>>() {
+                    @Override
+                    public void subscribe(ObservableEmitter<List<User>> e) throws Exception {
+                        if (!e.isDisposed()) {
+                            e.onNext(Utils.getUserListWhoLovesCricket());
+                            e.onComplete();
+                        }
+                    }
+                })
+                , Observable.create(new ObservableOnSubscribe<List<User>>() {
+                    @Override
+                    public void subscribe(ObservableEmitter<List<User>> e) throws Exception {
+                        if (!e.isDisposed()) {
+                            e.onNext(Utils.getUserListWhoLovesFootball());
+                            e.onComplete();
+                        }
+                    }
+                })
+                , new BiFunction<List<User>, List<User>, List<User>>() {
+                    @Override
+                    public List<User> apply(@NonNull List<User> users, @NonNull List<User> users2) throws Exception {
+                        return Utils.filterUserWhoLovesBoth(users, users2);
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(getListUserObserver());
     }
 
     void testMapOperator() {
@@ -92,37 +124,42 @@ public class MainActivity extends AppCompatActivity {
                         return Utils.convertApiUserListToUserList(apiUsers);
                     }
                 })
-                .subscribe(new Observer<List<User>>() {
-                    @Override
-                    public void onSubscribe(Disposable d) {
-                        Log.d(TAG, " onSubscribe : " + d.isDisposed());
-                    }
+                .subscribe(getListUserObserver());
+    }
 
-                    @Override
-                    public void onNext(List<User> userList) {
-                        textView.append(" onNext");
-                        textView.append(LINE_SEPARATOR);
-                        for (User user : userList) {
-                            textView.append(" firstname : " + user.firstname);
-                            textView.append(LINE_SEPARATOR);
-                        }
-                        Log.d(TAG, " onNext : " + userList.size());
-                    }
+    @android.support.annotation.NonNull
+    private Observer<List<User>> getListUserObserver() {
+        return new Observer<List<User>>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+                Log.d(TAG, " onSubscribe : " + d.isDisposed());
+            }
 
-                    @Override
-                    public void onError(Throwable e) {
-                        textView.append(" onError : " + e.getMessage());
-                        textView.append(LINE_SEPARATOR);
-                        Log.d(TAG, " onError : " + e.getMessage());
-                    }
+            @Override
+            public void onNext(List<User> userList) {
+                textView.append(" onNext");
+                textView.append(LINE_SEPARATOR);
+                for (User user : userList) {
+                    textView.append(" firstname : " + user.firstname);
+                    textView.append(LINE_SEPARATOR);
+                }
+                Log.d(TAG, " onNext : " + userList.size());
+            }
 
-                    @Override
-                    public void onComplete() {
-                        textView.append(" onComplete");
-                        textView.append(LINE_SEPARATOR);
-                        Log.d(TAG, " onComplete");
-                    }
-                });
+            @Override
+            public void onError(Throwable e) {
+                textView.append(" onError : " + e.getMessage());
+                textView.append(LINE_SEPARATOR);
+                Log.d(TAG, " onError : " + e.getMessage());
+            }
+
+            @Override
+            public void onComplete() {
+                textView.append(" onComplete");
+                textView.append(LINE_SEPARATOR);
+                Log.d(TAG, " onComplete");
+            }
+        };
     }
 
 
