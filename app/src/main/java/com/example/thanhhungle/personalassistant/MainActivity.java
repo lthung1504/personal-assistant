@@ -1,5 +1,9 @@
 package com.example.thanhhungle.personalassistant;
 
+import com.example.thanhhungle.personalassistant.model.ApiUser;
+import com.example.thanhhungle.personalassistant.model.User;
+import com.example.thanhhungle.personalassistant.utils.Utils;
+
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.support.design.widget.FloatingActionButton;
@@ -12,6 +16,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -19,7 +24,10 @@ import io.reactivex.Completable;
 import io.reactivex.CompletableObserver;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.ObservableSource;
+import io.reactivex.Observer;
 import io.reactivex.Single;
 import io.reactivex.SingleObserver;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -27,6 +35,7 @@ import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
+import io.reactivex.functions.Function;
 import io.reactivex.observers.DisposableObserver;
 import io.reactivex.schedulers.Schedulers;
 
@@ -56,7 +65,8 @@ public class MainActivity extends AppCompatActivity {
 //                testDisposable();
 //                testFlowable();
 //                testSingleObserver();
-                testCompletableObserver();
+//                testCompletableObserver();
+                testMapOperator();
             }
         });
 
@@ -64,6 +74,57 @@ public class MainActivity extends AppCompatActivity {
         textView = (TextView) findViewById(R.id.tvText);
 
     }
+
+    void testMapOperator() {
+        Observable.create(new ObservableOnSubscribe<List<ApiUser>>() {
+            @Override
+            public void subscribe(ObservableEmitter<List<ApiUser>> e) throws Exception {
+                if (!e.isDisposed()) {
+                    e.onNext(Utils.getApiUserList());
+                    e.onComplete();
+                }
+            }
+        }).subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .map(new Function<List<ApiUser>, List<User>>() {
+                    @Override
+                    public List<User> apply(@NonNull List<ApiUser> apiUsers) throws Exception {
+                        return Utils.convertApiUserListToUserList(apiUsers);
+                    }
+                })
+                .subscribe(new Observer<List<User>>() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+                        Log.d(TAG, " onSubscribe : " + d.isDisposed());
+                    }
+
+                    @Override
+                    public void onNext(List<User> userList) {
+                        textView.append(" onNext");
+                        textView.append(LINE_SEPARATOR);
+                        for (User user : userList) {
+                            textView.append(" firstname : " + user.firstname);
+                            textView.append(LINE_SEPARATOR);
+                        }
+                        Log.d(TAG, " onNext : " + userList.size());
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        textView.append(" onError : " + e.getMessage());
+                        textView.append(LINE_SEPARATOR);
+                        Log.d(TAG, " onError : " + e.getMessage());
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        textView.append(" onComplete");
+                        textView.append(LINE_SEPARATOR);
+                        Log.d(TAG, " onComplete");
+                    }
+                });
+    }
+
 
     @Override
     protected void onDestroy() {
